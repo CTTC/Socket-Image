@@ -20,6 +20,34 @@ void error(const char *msg)
   perror(msg);
   exit(0);
 }
+bool recv_all(int socket, void *buffer, int length)
+{
+  uchar *ptr = (uchar*) buffer;
+  int bytes = 0;
+  while (length > 0)
+  {
+    puts("rece");
+    bytes = recv(socket, ptr, length, 0);
+    std::cout << "bytes " << bytes << "  length: " << length<< std::endl;
+    if (bytes < 1) return false;
+    ptr += bytes;
+    length -= bytes;
+  }
+  return true;
+}
+bool send_all(int socket, void *buffer, int length)
+{
+    uchar *ptr = (uchar*) buffer;
+    int bytes = 0;
+    while (length > 0)
+    {
+        bytes = send(socket, ptr, length, 0);
+        if (bytes < 1) return false;
+        ptr += bytes;
+        length -= bytes;
+    }
+    return true;
+}
 
 int main()
 {
@@ -50,9 +78,10 @@ int main()
   if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
     error("ERROR connecting");
 
-  cameraFeed = cv::imread("image.jpg", cv::IMREAD_COLOR );
+  cameraFeed = cv::imread("image.jpg", cv::IMREAD_COLOR);
 
-  // cameraFeed = cv::imread("depth.png", cv::IMREAD_COLOR );
+  // cameraFeed = cv::imread("depth.png", cv::IMREAD_ANYDEPTH);
+  std::cout << "channel: " << cameraFeed.channels() << "  " << cameraFeed.rows << "  " << cameraFeed.cols << std::endl;
   if (!cameraFeed.data)
   {
     std::cout <<  "Could not open or find the image" << std::endl ;
@@ -63,26 +92,37 @@ int main()
 
   imgSize = cameraFeed.total() * cameraFeed.elemSize();
 
-  int numImages = 100;
-  n = send(sockfd, &numImages, sizeof(int), 0);
-  if (n < 0) error("ERROR writing to socket");
-  n = send(sockfd, &height, sizeof(int), 0);
-  if (n < 0) error("ERROR writing to socket");
-  n = send(sockfd, &width, sizeof(int), 0);
-  if (n < 0) error("ERROR writing to socket");
-  n = send(sockfd, &imgSize, sizeof(int), 0);
-  if (n < 0) error("ERROR writing to socket");
+  double min, max;
+  cv::Point minLoc;
+  cv::Point maxLoc;
+  cameraFeed = cameraFeed.reshape(1);
+  cv::minMaxLoc(cameraFeed, &min, &max, &minLoc, &maxLoc );
+  std::cout << "Min: " << min << " Max: " << max << std::endl;
+  std::cout << "image size: " << imgSize << std::endl;
+  int numImages = 10;
+  std::vector<int> header = {numImages, height, width, imgSize};
+  for (int i = 0; i < header.size(); i++)
+  {
+    bool send_ok = send_all(sockfd, &header[i], sizeof(int));
+    if (!send_ok) error("ERROR sending header");
+  }
   std::chrono::time_point<std::chrono::system_clock> start, end;
   start = std::chrono::system_clock::now();
 
-  uchar received_str[100];
+  double received_str[3] = {0.0};
   for (int idx = 0; idx < numImages; idx++)
   {
-    n = send(sockfd, cameraFeed.data, imgSize, 0);
-    if (n < 0) error("ERROR writing to socket");
+    // n = send(sockfd, cameraFeed.data, imgSize, 0);
+    bool send_ok = send_all(sockfd, cameraFeed.data, imgSize);
+    if (!send_ok) error("ERROR sending Image");
     puts("Data Send");
-    int bytes = recv(sockfd, received_str, 100, 0);
-    if (bytes == -1) error("recv failed");
+    bool rev_ok = recv_all(sockfd, received_str, sizeof(received_str));
+    if (!rev_ok) error("ERROR receiving feedback");
+    // int bytes = recv(sockfd, received_str, sizeof(received_str), 0);
+    // if (bytes == -1) error("recv failed");
+    std::cout << " Testing Feedback Received: " << received_str[0] << "  " << 
+    received_str[1] << "  " << received_str[2]<< std::endl;
+    
     puts("  Feedback Received");
   }
   end = std::chrono::system_clock::now();
