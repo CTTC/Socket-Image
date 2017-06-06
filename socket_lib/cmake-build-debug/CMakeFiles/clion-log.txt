@@ -1,4 +1,0 @@
-/home/chentao/software/clion-2017.1/bin/cmake/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/chentao/ClionProjects/socket
--- Configuring done
--- Generating done
--- Build files have been written to: /home/chentao/ClionProjects/socket/cmake-build-debug
