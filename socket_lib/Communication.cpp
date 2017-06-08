@@ -40,8 +40,10 @@ void Client::sendImgHeader(const std::vector<cv::Mat>& images)
     mImWidth = image.cols;
     mImChannel = image.channels();
     mImMemSize = image.total() * image.elemSize();
-    mImType = image.type();
+    mImType = image.depth();
     mNumImages = images.size();
+    std::cout<<"height: "<<mImHeight<< " width: " << mImWidth << " channel: " << mImChannel;
+    std::cout<< " Memsize: " << mImMemSize << " ImType: " << mImType << std::endl;
     std::vector<int> header = {mNumImages, mImWidth, mImHeight, mImChannel, mImMemSize, mImType};
     for (int i = 0; i < header.size(); i++)
     {
