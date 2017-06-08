@@ -14,8 +14,8 @@ int main() {
     double min, max;
     cv::Point minLoc;
     cv::Point maxLoc;
-    cameraFeed = cameraFeed.reshape(1);
-    cv::minMaxLoc(cameraFeed, &min, &max, &minLoc, &maxLoc );
+    cv::Mat cameraFeedFlat = cameraFeed.reshape(1);
+    cv::minMaxLoc(cameraFeedFlat, &min, &max, &minLoc, &maxLoc );
     std::cout << "Min: " << min << " Max: " << max << std::endl;
     std::vector<cv::Mat> images;
     for (int i = 0; i < 5; i++)
