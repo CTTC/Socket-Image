@@ -1,28 +1,23 @@
 #include <iostream>
 #include "Communication.h"
 
-int main() {
-    Client client;
+int send(Client& client)
+{
     cv::Mat cameraFeed = cv::imread("image.jpg", cv::IMREAD_COLOR);
-//    cv::Mat cameraFeed = cv::imread("depth.png", cv::IMREAD_ANYDEPTH);
     if (!cameraFeed.data)
     {
         std::cout <<  "Could not open or find the image" << std::endl ;
         return -1;
     }
-//    cameraFeed.convertTo(cameraFeed,CV_32F,1/256.0);
-    double min, max;
-    cv::Point minLoc;
-    cv::Point maxLoc;
-    cv::Mat cameraFeedFlat = cameraFeed.reshape(1);
-    cv::minMaxLoc(cameraFeedFlat, &min, &max, &minLoc, &maxLoc );
-    std::cout << "Min: " << min << " Max: " << max << std::endl;
+    std::cout<<"height: "<<cameraFeed.rows<< " width: " << cameraFeed.cols << " type: "<< cameraFeed.type() << std::endl;
+
     std::vector<cv::Mat> images;
     for (int i = 0; i < 5; i++)
     {
         images.push_back(cameraFeed.clone());
     }
     client.sendImages(images);
+
     Client::ClsPosPairs clsPosPairs;
     std::cout<< "Sending Done"<<std::endl;
     client.getSegResult(clsPosPairs);
@@ -31,14 +26,25 @@ int main() {
     for (int i = 0; i < clsPosPairs.size(); i++)
     {
         std::cout<< "Name: " << clsPosPairs[i].first << std::endl;
-        std::cout<< "Position: " << std::setw(6) << std::fixed << std::setprecision(3);
-        std::vector<double> pos = clsPosPairs[i].second;
-        for (int j = 0; j < pos.size(); j++)
+        std::cout<< "Position: " << std::setw(6) << std::fixed << std::setprecision(3) << std::endl;
+        std::vector<std::vector<double> > poses = clsPosPairs[i].second;
+        for (int j = 0; j < poses.size(); j++)
         {
-            std::cout<< pos[j] << " ";
+            std::vector<double> pos = poses[j];
+            std::cout<< "          ";
+            for (int k = 0; k < pos.size(); k++)
+            {
+                std::cout << pos[k] << " ";
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl << std::endl;
-    }
+        std::cout << std::endl;
 
+    }
+    return 0;
+}
+int main() {
+    Client client;
+    send(client);
     return 0;
 }

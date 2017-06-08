@@ -8,7 +8,7 @@
 class Client
 {
 public:
-    typedef std::vector<std::pair<std::string, std::vector<double> > > ClsPosPairs;
+    typedef std::vector<std::pair<std::string, std::vector<std::vector<double> > > > ClsPosPairs;
     Client();
     Client(std::string hostname, int port);
     ~Client();

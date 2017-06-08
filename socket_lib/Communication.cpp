@@ -42,8 +42,6 @@ void Client::sendImgHeader(const std::vector<cv::Mat>& images)
     mImMemSize = image.total() * image.elemSize();
     mImType = image.depth();
     mNumImages = images.size();
-    std::cout<<"height: "<<mImHeight<< " width: " << mImWidth << " channel: " << mImChannel;
-    std::cout<< " Memsize: " << mImMemSize << " ImType: " << mImType << std::endl;
     std::vector<int> header = {mNumImages, mImWidth, mImHeight, mImChannel, mImMemSize, mImType};
     for (int i = 0; i < header.size(); i++)
     {
@@ -103,12 +101,20 @@ void Client::getSegResult(ClsPosPairs& pairs)
         uchar className[clsNameLen[0]];
         rev_ok = recvAll(mSockfd, className, clsNameLen[0]);
         if (!rev_ok) error("ERROR Receiving Object's Name");
-        double pos[3];
-        rev_ok = recvAll(mSockfd, pos, sizeof(pos));
-        if (!rev_ok) error("ERROR Receiving Object's Position");
+        int clsNum[1];
+        rev_ok = recvAll(mSockfd, clsNum, sizeof(clsNum));
+        if (!rev_ok) error("ERROR Receiving Object's Total Number");
+        std::vector<std::vector<double> > poses;
+        for (int j = 0; j < clsNum[0]; j++)
+        {
+            double pos[3];
+            rev_ok = recvAll(mSockfd, pos, sizeof(pos));
+            if (!rev_ok) error("ERROR Receiving Object's Position");
+            std::vector<double> vPos(pos, pos + sizeof(pos) / sizeof(pos[0]));
+            poses.push_back(vPos);
+        }
         std::string sClassName(className, className+sizeof(className) / sizeof(className[0]));
-        std::vector<double> vPos(pos, pos + sizeof(pos) / sizeof(pos[0]));
-        std::pair<std::string, std::vector<double> > clsPos(sClassName, vPos);
+        std::pair<std::string, std::vector<std::vector<double> > > clsPos(sClassName, poses);
         pairs.push_back(clsPos);
     }
 }

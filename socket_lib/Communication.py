@@ -8,6 +8,7 @@ import sys
 import numpy as np
 import struct
 
+
 class Server:
     def __init__(self, *args, **kwargs):
         self.host = kwargs.get('host', 'None')
@@ -39,19 +40,28 @@ class Server:
 
     def get_images(self):
         self.get_imgheader()
-        imgs= self.get_imgmat()
+        imgs = self.get_imgmat()
         return imgs
 
-        
     def get_imgheader(self):
-        nbytes = self.conn.recv(struct.calcsize("i") * 6, socket.MSG_WAITALL)
+        nbytes = ''
+        count = struct.calcsize("i") * 6
+        while count:
+            newbuf = self.conn.recv(count)
+            count -= len(newbuf)
+            nbytes += newbuf
+
+        # nbytes = self.conn.recv(struct.calcsize("i") * 6, socket.MSG_WAITALL)
+        print(type(nbytes))
+        print(len(nbytes))
+        print(struct.unpack( 'i', nbytes[:4]))
         value = struct.unpack("i" * 6, nbytes)
         self.numImages, self.imWidth, self.imHeight, self.imChannels, \
         self.imgSize, self.imType = (int(i) for i in value)
         if self.imType not in self.int_to_cvtype:
             raise Exception('Cannot recognize the image type')
         print("numImage: %d, imHeight: %d, imWidth: %d, "
-              "imChannels: %d, imgSize: %d, imType: %s" %\
+              "imChannels: %d, imgSize: %d, imType: %s" % \
               (self.numImages, self.imHeight, self.imWidth,
                self.imChannels, self.imgSize, self.int_to_cvtype[self.imType]))
 
@@ -68,11 +78,18 @@ class Server:
     def send_seg_result(self, cls_pos):
         num_objs = np.array([len(cls_pos)], dtype=np.int32)
         self.conn.sendall(num_objs.tostring())
-        for cls, pos in cls_pos.iteritems():
+        for cls, poses in cls_pos.iteritems():
             name_len = np.array([len(cls)], dtype=np.int32)
-            self.conn.sendall(name_len.tostring())
-            self.conn.sendall(cls)
-            self.conn.sendall(pos.astype(np.float64).tostring())
+            poses = np.asarray(poses, dtype=np.float64)
+            pose_len = np.array([poses.shape[0]], dtype=np.int32)
+            try:
+                self.conn.sendall(name_len.tostring())
+                self.conn.sendall(cls)
+                self.conn.sendall(pose_len.tostring())
+                self.conn.sendall(poses.astype(np.float64).tostring())
+            except:
+                print('Cannot send segmentation result')
+                break
 
     def decode_image(self, sock_data):
         sock_data = np.fromstring(sock_data, self.int_to_nptype[self.imType])
@@ -81,6 +98,6 @@ class Server:
                                                self.imChannels))
         return image
 
-    
+
 
 
