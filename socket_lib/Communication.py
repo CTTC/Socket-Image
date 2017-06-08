@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import absolute_import
 from __future__ import print_function
 
 import socket
@@ -65,7 +67,7 @@ class Server:
         num_objs = np.array([len(cls_pos)], dtype=np.int32)
         self.conn.sendall(num_objs.tostring())
         for cls, pos in cls_pos.iteritems():
-            name_len = np.array(len(cls), dtype=np.int32)
+            name_len = np.array([len(cls)], dtype=np.int32)
             self.conn.sendall(name_len.tostring())
             self.conn.sendall(cls)
             self.conn.sendall(pos.astype(np.float64).tostring())
