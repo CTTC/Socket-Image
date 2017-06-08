@@ -48,6 +48,8 @@ class Server:
         value = struct.unpack("i" * 6, nbytes)
         self.numImages, self.imWidth, self.imHeight, self.imChannels, \
         self.imgSize, self.imType = (int(i) for i in value)
+        if self.imType not in self.int_to_cvtype:
+            raise Exception('Cannot recognize the image type')
         print("numImage: %d, imHeight: %d, imWidth: %d, "
               "imChannels: %d, imgSize: %d, imType: %s" %\
               (self.numImages, self.imHeight, self.imWidth,
