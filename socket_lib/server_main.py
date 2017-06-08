@@ -12,7 +12,8 @@ if __name__ == "__main__":
     kwargs = {'host': 'localhost',
               'port': 7200}
     server = Server(**kwargs)
-    server.get_images()
+    imgs = server.get_images()
+    print('Min: ', np.min(imgs[0]), ' Max: ', np.max(imgs[0]))
     response = {'apple': np.random.uniform(0, 2, 3),
                 'banana': np.random.uniform(0, 2, 3),
                 'orange': np.random.uniform(0, 2, 3)}

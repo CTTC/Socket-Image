@@ -4,11 +4,19 @@
 int main() {
     Client client;
     cv::Mat cameraFeed = cv::imread("image.jpg", cv::IMREAD_COLOR);
+//    cv::Mat cameraFeed = cv::imread("depth.png", cv::IMREAD_ANYDEPTH);
     if (!cameraFeed.data)
     {
         std::cout <<  "Could not open or find the image" << std::endl ;
         return -1;
     }
+//    cameraFeed.convertTo(cameraFeed,CV_32F,1/256.0);
+    double min, max;
+    cv::Point minLoc;
+    cv::Point maxLoc;
+    cameraFeed = cameraFeed.reshape(1);
+    cv::minMaxLoc(cameraFeed, &min, &max, &minLoc, &maxLoc );
+    std::cout << "Min: " << min << " Max: " << max << std::endl;
     std::vector<cv::Mat> images;
     for (int i = 0; i < 5; i++)
     {

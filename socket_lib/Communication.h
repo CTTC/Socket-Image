@@ -32,6 +32,8 @@ private:
     const int mcMaskClsSize;
     int mImHeight;
     int mImWidth;
+    int mImChannel;
+    int mImType;
     int mNumImages;
     int mSockfd;
     int mImMemSize;

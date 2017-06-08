@@ -38,9 +38,11 @@ void Client::sendImgHeader(const std::vector<cv::Mat>& images)
     cv::Mat image = images[0];
     mImHeight = image.rows;
     mImWidth = image.cols;
+    mImChannel = image.channels();
     mImMemSize = image.total() * image.elemSize();
+    mImType = image.type();
     mNumImages = images.size();
-    std::vector<int> header = {mNumImages, mImWidth, mImHeight, mImMemSize};
+    std::vector<int> header = {mNumImages, mImWidth, mImHeight, mImChannel, mImMemSize, mImType};
     for (int i = 0; i < header.size(); i++)
     {
         bool sen = sendAll(mSockfd, &header[i], sizeof(int));

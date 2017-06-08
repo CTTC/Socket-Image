@@ -10,6 +10,10 @@ class Server:
     def __init__(self, *args, **kwargs):
         self.host = kwargs.get('host', 'None')
         self.port = kwargs.get('port', 7200)
+        cvtypes = ['CV_8U', 'CV_8S', 'CV_16U', 'CV_16S', 'CV_32S', 'CV_32F', 'CV_64F']
+        nptypes = [np.uint8, np.int8, np.uint16, np.int16, np.int32, np.float32, np.float64]
+        self.int_to_cvtype = dict(zip(range(len(cvtypes)), cvtypes))
+        self.int_to_nptype = dict(zip(range(len(nptypes)), nptypes))
         self.setup_connect_server()
 
     def setup_connect_server(self):
@@ -18,6 +22,7 @@ class Server:
             af, socktype, proto, canonname, sa = res
             try:
                 s = socket.socket(af, socktype, proto)
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             except socket.error as msg:
                 raise msg
             try:
@@ -32,34 +37,29 @@ class Server:
 
     def get_images(self):
         self.get_imgheader()
-        color_img, depth_img = self.get_imgmat()
-        return color_img, depth_img
+        imgs= self.get_imgmat()
+        return imgs
 
         
     def get_imgheader(self):
-        nbytes = self.conn.recv(struct.calcsize("i") * 4, socket.MSG_WAITALL)
-        value = struct.unpack("i" * 4, nbytes)
-        self.numImages, self.imWidth, self.imHeight, self.imgSize = (int(i) for i in value)
-        print("numImage: %d, imHeight: %d, imWidth: %d, imgSize: %d" %\
-              (self.numImages, self.imHeight, self.imWidth, self.imgSize))
+        nbytes = self.conn.recv(struct.calcsize("i") * 6, socket.MSG_WAITALL)
+        value = struct.unpack("i" * 6, nbytes)
+        self.numImages, self.imWidth, self.imHeight, self.imChannels, \
+        self.imgSize, self.imType = (int(i) for i in value)
+        print("numImage: %d, imHeight: %d, imWidth: %d, "
+              "imChannels: %d, imgSize: %d, imType: %s" %\
+              (self.numImages, self.imHeight, self.imWidth,
+               self.imChannels, self.imgSize, self.int_to_cvtype[self.imType]))
 
     def get_imgmat(self):
         imgs = []
         for idx in xrange(self.numImages):
             img = self.conn.recv(self.imgSize, socket.MSG_WAITALL)
             if img:
+                img = self.decode_image(img)
                 imgs.append(img)
-        if len(imgs) > 2:
-            print("!!! Warning: Only two images (Color Image and Depth Image) needed at a time")
-            print("Taking the first image as the color image ...")
-            print("Taking the second image as the depth image ...")
-        color_img = self.decode_image(imgs[0])
-        depth_img = self.decode_image(imgs[1])
-        assert color_img.shape[2] == 3, 'Color image should have 3 channels'
-        assert color_img.shape[2] == 1, 'Depth image should have 1 channel'
-        assert color_img.shape[:2] == depth_img.shape, \
             'Color image and Depth image should have same height and width'
-        return color_img, depth_img
+        return imgs
 
     def send_seg_result(self, cls_pos):
         num_objs = np.array([len(cls_pos)], dtype=np.int32)
@@ -71,10 +71,10 @@ class Server:
             self.conn.sendall(pos.astype(np.float64).tostring())
 
     def decode_image(self, sock_data):
-        sock_data = np.fromstring(sock_data, np.uint8)
+        sock_data = np.fromstring(sock_data, self.int_to_nptype[self.imType])
         image = np.tile(sock_data, 1).reshape((self.imHeight,
                                                self.imWidth,
-                                               sock_data.size / self.imHeight / self.imWidth))
+                                               self.imChannels))
         return image
 
     
