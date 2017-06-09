@@ -55,6 +55,7 @@ int send(Client& client)
     std::chrono::time_point<std::chrono::system_clock> start;
     std::chrono::time_point<std::chrono::system_clock> end;
     start = std::chrono::system_clock::now();
+    std::cout<< std::endl << "==================================="<<std::endl;
     client.sendImages(color_imgs);
     client.sendImages(depth_imgs);
 
@@ -68,7 +69,7 @@ int send(Client& client)
     std::cout << FGRN("Finished computation at ") << std::ctime(&end_time)
               << FGRN("Elapsed time: ") << elapsed_seconds.count() << "s\n";
 
-    std::cout<< "==================================="<<std::endl;
+
     std::cout<< FBLU("Response:")<<std::endl;
     for (int i = 0; i < clsPosPairs.size(); i++)
     {
@@ -88,6 +89,7 @@ int send(Client& client)
         std::cout << std::endl;
 
     }
+    std::cout << "==================================="<<std::endl;
     return 0;
 }
 int main() {

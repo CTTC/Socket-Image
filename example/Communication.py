@@ -53,11 +53,8 @@ class Server:
         bytesize = struct.calcsize("i") * 6
         nbytes = self.conn.recv(bytesize, socket.MSG_WAITALL)
         if len(nbytes) != bytesize:
-            raise Exception("Incomplete Header Info received")
+            raise Exception("Incomplete Header Info received, need reconnection!")
 
-        print(type(nbytes))
-        print(len(nbytes))
-        print(struct.unpack( 'i', nbytes[:4]))
         value = struct.unpack("i" * 6, nbytes)
         self.numImages, self.imWidth, self.imHeight, self.imChannels, \
         self.imgSize, self.imType = (int(i) for i in value)
