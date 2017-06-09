@@ -44,17 +44,18 @@ class Server:
         return imgs
 
     def get_imgheader(self):
-        nbytes = ''
-        count = struct.calcsize("i") * 6
-        while count:
-            newbuf = self.conn.recv(count)
-            count -= len(newbuf)
-            nbytes += newbuf
-
+        # nbytes = ''
+        # count = struct.calcsize("i") * 6
+        # while count:
+        #     newbuf = self.conn.recv(count)
+        #     count -= len(newbuf)
+        #     nbytes += newbuf
+        bytesize = struct.calcsize("i") * 6
+        nbytes = self.conn.recv(bytesize, socket.MSG_WAITALL)
+        if len(nbytes) != bytesize:
+            raise Exception("Incomplete Header Info received, need reconnection!")
         # nbytes = self.conn.recv(struct.calcsize("i") * 6, socket.MSG_WAITALL)
-        print(type(nbytes))
-        print(len(nbytes))
-        print(struct.unpack( 'i', nbytes[:4]))
+
         value = struct.unpack("i" * 6, nbytes)
         self.numImages, self.imWidth, self.imHeight, self.imChannels, \
         self.imgSize, self.imType = (int(i) for i in value)
